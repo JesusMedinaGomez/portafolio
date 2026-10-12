@@ -126,7 +126,7 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
         <div class="section-top reveal">
           <span class="section-kicker">01 / PORTAFOLIO</span><span>{String(total).padStart(2, "0")} PIEZAS SELECCIONADAS</span>
         </div>
-        <h2 class="section-title reveal">TRABAJO <span>SELECCIONADO<span class="period">.</span></span></h2>
+        <h2 class="section-title reveal">TRABAJO <span>SELECCIONADO</span></h2>
 
         <!-- MESA DE MONTAJE: las pistas seleccionan el proyecto del visor -->
         <div class="edit-suite reveal" aria-label="Mesa de montaje interactiva">
@@ -211,8 +211,14 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
 
         <div class="gallery-intro reveal"><span>EXPLORA TODOS LOS PROYECTOS</span><span>↓</span></div>
 
-        <div class="gallery-heading reveal"><h3>LONG <em>FORM.</em></h3><span>01 — 03 / VIDEO</span></div>
-        <div class="video-gallery long-gallery">
+        <div class="gallery-heading reveal"><h3>LONG <em>FORM</em></h3><span>01 — 03 / VIDEO</span></div>
+        <div class="carousel-controls" aria-label="Controles de videos largos">
+          <span class="carousel-hint">DESLIZA PARA EXPLORAR <span aria-hidden="true">↔</span></span>
+          <button type="button" class="carousel-arrow" data-carousel="long" data-direction="-1" aria-label="Proyecto anterior" disabled>←</button>
+          <button type="button" class="carousel-arrow" data-carousel="long" data-direction="1" aria-label="Proyecto siguiente">→</button>
+        </div>
+        <div class="carousel-viewport" id="long-carousel" tabindex="0" aria-label="Carrusel de videos largos">
+          <div class="video-gallery long-gallery">
           {videosLargos.map((video, index) => (
             <article class="video-card reveal">
               <div class="video-container" data-youtube-id={video.id}>
@@ -243,9 +249,16 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
             </article>
           ))}
         </div>
+        </div>
 
-        <div class="gallery-heading shorts-heading reveal"><h3>SHORT <em>FORM.</em></h3><span>04 — 06 / VERTICAL</span></div>
-        <div class="video-gallery short-gallery">
+        <div class="gallery-heading shorts-heading reveal"><h3>SHORT <em>FORM</em></h3><span>04 — 06 / VERTICAL</span></div>
+        <div class="carousel-controls" aria-label="Controles de videos cortos">
+          <span class="carousel-hint">DESLIZA PARA EXPLORAR <span aria-hidden="true">↔</span></span>
+          <button type="button" class="carousel-arrow" data-carousel="short" data-direction="-1" aria-label="Proyecto anterior" disabled>←</button>
+          <button type="button" class="carousel-arrow" data-carousel="short" data-direction="1" aria-label="Proyecto siguiente">→</button>
+        </div>
+        <div class="carousel-viewport" id="short-carousel" tabindex="0" aria-label="Carrusel de videos cortos">
+          <div class="video-gallery short-gallery">
           {shorts.map((video, index) => (
             <article class="video-card reveal">
               <div class="video-container vertical" data-youtube-id={video.id}>
@@ -276,12 +289,14 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
             </article>
           ))}
         </div>
+        </div>
+
       </section>
 
       <section class="section about" id="sobre-mi">
         <div class="section-top reveal"><span class="section-kicker">02 / ACERCA DE MÍ</span><span>UN POCO DE CONTEXTO</span></div>
         <div class="about-layout">
-          <h2 class="about-heading reveal">CURIOSIDAD<br />EN <em>MOVIMIENTO.</em></h2>
+          <h2 class="about-heading reveal">CURIOSIDAD<br />EN <em>MOVIMIENTO</em></h2>
           <div class="about-text reveal">
             <p>Soy <strong>Jesús Medina</strong>, estudiante de Ciencias de la Comunicación en la UNAM y de Matemáticas en la UnADM.</p>
             <p>La curiosidad es el mejor navío para explorar el vasto mar de la complejidad humana. La ciencia, la historia, la literatura, las artes y la música son algunas de las islas en las que quisiera echar el ancla a lo largo de mi vida. Son territorios en los que quisiera detenerme, acaso durante toda una vida, para descubrir nuevas formas de comprender y experimentar el mundo.</p>
@@ -507,6 +522,44 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
         const container = button?.closest<HTMLElement>(".video-container");
         if (container) activateVideo(container);
       });
+
+      // Galerías deslizables: desplazamiento táctil, ratón, flechas y teclado.
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      for (const type of ["long", "short"]) {
+        const viewport = document.getElementById(`${type}-carousel`);
+        if (!viewport) continue;
+        const cards = [...viewport.querySelectorAll<HTMLElement>(".video-card")];
+        const previous = document.querySelector<HTMLButtonElement>(`[data-carousel="${type}"][data-direction="-1"]`);
+        const next = document.querySelector<HTMLButtonElement>(`[data-carousel="${type}"][data-direction="1"]`);
+
+        function updateArrows() {
+          const end = viewport!.scrollWidth - viewport!.clientWidth;
+          if (previous) previous.disabled = viewport!.scrollLeft <= 3;
+          if (next) next.disabled = viewport!.scrollLeft >= end - 3;
+        }
+
+        function move(direction: number) {
+          const current = viewport!.scrollLeft;
+          const destinations = cards.map(card => card.offsetLeft - cards[0].offsetLeft);
+          const target = direction > 0
+            ? destinations.find(x => x > current + 5) ?? viewport!.scrollWidth
+            : [...destinations].reverse().find(x => x < current - 5) ?? 0;
+          viewport!.scrollTo({ left: target, behavior: reduceMotion.matches ? "instant" : "smooth" });
+        }
+
+        previous?.addEventListener("click", () => move(-1));
+        next?.addEventListener("click", () => move(1));
+        viewport.addEventListener("keydown", (event) => {
+          if (event.target !== viewport) return;
+          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+            event.preventDefault();
+            move(event.key === "ArrowRight" ? 1 : -1);
+          }
+        });
+        viewport.addEventListener("scroll", updateArrows, { passive: true });
+        window.addEventListener("resize", updateArrows);
+        updateArrows();
+      }
     </script>
   </body>
 </html>
@@ -737,4 +790,28 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
   @media (max-width: 900px) { .suite-layout { grid-template-columns: 1fr; } .suite-preview { border-right: 0; border-bottom: 1px solid #303038; } .suite-info { padding: 24px; } .suite-tip { padding-top: 20px; } }
   @media (max-width: 600px) { .edit-suite { margin-bottom: 70px; } .suite-topbar { font-size: 8px; padding: 12px; } .suite-live { display: none; } .suite-preview { padding: 12px; } .suite-control-name { max-width: 100%; } .timeline { overflow-x: auto; padding: 12px; } .timeline-ruler, .timeline-bottom { min-width: 585px; } .timeline-clips, .audio-clips { min-width: 585px; } .timeline-row { width: max-content; min-width: 100%; } .timeline-clips, .audio-clips { flex: 0 0 585px; } .timeline-clip { height: 83px; } .track-label { flex-basis: 58px; } .suite-play { width: 55px; height: 55px; font-size: 18px; } }
 
+
+  /* CARRUSELES EDITORIALES: CONSERVAN LAS TARJETAS Y LOS REPRODUCTORES */
+  .carousel-controls { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: -10px 0 18px; }
+  .carousel-hint { margin-right: auto; font-size: 10px; font-weight: 700; letter-spacing: 1.35px; color: var(--muted); }
+  .carousel-arrow { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #45454d; background: #1b1c21; color: var(--text); font-size: 21px; cursor: pointer; border-radius: 50%; transition: background .2s, border-color .2s, color .2s; }
+  .carousel-arrow:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #101013; }
+  .carousel-arrow:focus-visible, .carousel-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
+  .carousel-viewport { overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 2px; scrollbar-width: thin; scrollbar-color: #494951 transparent; padding: 0 0 18px; }
+  .carousel-viewport .video-gallery { display: flex; gap: 24px; align-items: stretch; }
+  .carousel-viewport .video-card { flex: 0 0 clamp(330px, 47%, 720px); min-width: 0; scroll-snap-align: start; }
+  .carousel-viewport .long-gallery .video-card:first-child { grid-column: auto; }
+  .carousel-viewport .short-gallery .video-card { flex-basis: clamp(190px, 27%, 360px); }
+  .carousel-viewport .video-details { padding-bottom: 7px; }
+  @media (max-width: 700px) {
+    .carousel-viewport .video-gallery { gap: 16px; }
+    .carousel-viewport .long-gallery .video-card { flex-basis: min(86%, 510px); }
+    .carousel-viewport .short-gallery .video-card { flex-basis: min(55%, 270px); }
+    .carousel-hint { font-size: 8px; }
+  }
+  @media (max-width: 420px) {
+    .carousel-viewport .short-gallery { max-width: none; margin-inline: 0; }
+    .carousel-viewport .short-gallery .video-card { flex-basis: 67%; }
+  }
 </style>
