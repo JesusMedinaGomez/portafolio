@@ -22,10 +22,10 @@ content:
         type: string
         required: true
       - name: id
-        label: ID de YouTube (los 11 caracteres después de youtu.be/)
+        label: Enlace de YouTube o ID del video
         type: string
         required: true
-        pattern: "^[a-zA-Z0-9_-]{11}$"
+        description: Pega un enlace de YouTube (youtu.be, watch o shorts) o solo el ID.
       - name: formato
         label: Formato
         type: select
