@@ -1,0 +1,57 @@
+# Pages CMS — configuración para el portafolio de Jesús Medina
+media:
+  input: public/miniaturas
+  output: /miniaturas
+  extensions: [jpg, jpeg, png, webp]
+  rename: safe
+
+content:
+  - name: proyectos
+    label: Proyectos audiovisuales
+    type: collection
+    path: src/content/proyectos
+    format: json
+    filename: "{primary}.json"
+    view:
+      primary: titulo
+      fields: [titulo, formato, orden]
+      sort: [orden, titulo]
+    fields:
+      - name: titulo
+        label: Título
+        type: string
+        required: true
+      - name: id
+        label: ID de YouTube (los 11 caracteres después de youtu.be/)
+        type: string
+        required: true
+        pattern: "^[a-zA-Z0-9_-]{11}$"
+      - name: formato
+        label: Formato
+        type: select
+        required: true
+        options:
+          values:
+            - value: largo
+              label: Video largo
+            - value: short
+              label: Short vertical
+      - name: categoria
+        label: Categoría o tipo de trabajo
+        type: string
+        required: true
+      - name: descripcion
+        label: Descripción profesional
+        type: text
+        required: true
+      - name: habilidades
+        label: Técnicas y habilidades (agrega una por renglón)
+        type: string
+        list: true
+      - name: orden
+        label: Orden de aparición (1 primero)
+        type: number
+        required: true
+      - name: miniatura
+        label: Miniatura propia (opcional)
+        type: image

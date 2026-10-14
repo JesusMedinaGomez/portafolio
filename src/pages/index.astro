@@ -5,65 +5,24 @@ type Proyecto = {
   categoria: string;
   descripcion: string;
   habilidades: string[];
+  formato: "largo" | "short";
+  orden: number;
   miniatura?: string;
 };
 
-// Para añadir una miniatura propia, coloca un WebP/JPG en public/miniaturas/
-// y añade, por ejemplo: miniatura: "/miniaturas/dina.webp".
-// Si no se especifica, la web buscará la miniatura de mayor resolución disponible en YouTube.
-const videosLargos: Proyecto[] = [
-  {
-    id: "r1mUG2fsECM",
-    titulo: "¿Qué significan los sellos nutricionales?",
-    categoria: "EDICIÓN / CONTENIDO EDUCATIVO",
-    descripcion:
-      "Edición audiovisual de una exposición sobre los sellos de advertencia nutricionales. Una presentación académica transformada en una pieza visual más dinámica mediante montaje y recursos gráficos.",
-    habilidades: ["Edición de video", "Textos animados", "Recursos gráficos"],
-  },
-  {
-    id: "sEB5ioCYics",
-    titulo: "Series de Taylor",
-    categoria: "ANIMACIÓN MATEMÁTICA / DIVULGACIÓN",
-    descripcion:
-      "Explicación breve de las series de Taylor, desarrollada con animaciones matemáticas en Manim y narración con mi propia voz.",
-    habilidades: ["Manim", "Animación matemática", "Locución"],
-  },
-  {
-    id: "_PkzJVuE8vk",
-    titulo: "DINA Olímpico: historia y diseño",
-    categoria: "DOCUMENTAL / HISTORIA DEL TRANSPORTE",
-    descripcion:
-      "Una exploración audiovisual de la historia y el diseño del autobús DINA Olímpico, combinando divulgación histórica y edición narrativa.",
-    habilidades: ["Divulgación histórica", "Montaje", "Narrativa audiovisual"],
-  },
-];
-
-const shorts: Proyecto[] = [
-  {
-    id: "5BPnJI69JhI",
-    titulo: "DINA Olímpico / Fragmento 01",
-    categoria: "SHORT / ADAPTACIÓN VERTICAL",
-    descripcion:
-      "Adaptación de un fragmento del video sobre el DINA Olímpico al formato vertical, con subtítulos y textos en pantalla.",
-    habilidades: ["Reedición vertical", "Subtítulos", "Textos"],
-  },
-  {
-    id: "SGma2MupNAs",
-    titulo: "DINA Olímpico / Fragmento 02",
-    categoria: "SHORT / ADAPTACIÓN VERTICAL",
-    descripcion:
-      "Segundo fragmento adaptado del video largo: un tratamiento específico para consumo rápido, con subtítulos y elementos gráficos.",
-    habilidades: ["Reedición vertical", "Subtítulos", "Textos"],
-  },
-  {
-    id: "gtsL3fCXTFo",
-    titulo: "Topología y humor | Divulgación matemática",
-    categoria: "SHORT / HUMOR Y DIVULGACIÓN",
-    descripcion:
-      "Pieza breve de divulgación matemática que combina una explicación de topología en ℝⁿ con humor y recursos de edición para un público general.",
-    habilidades: ["Divulgación matemática", "Humor", "Edición vertical"],
-  },
-];
+// Pages CMS administra los JSON de esta carpeta. Astro los importa en cada build.
+const modulos = import.meta.glob('../content/proyectos/*.json', { eager: true, import: 'default' });
+const base = import.meta.env.BASE_URL;
+const proyectos: Proyecto[] = Object.values(modulos).map((raw) => {
+  const p = raw as Proyecto;
+  const imagen = p.miniatura?.trim();
+  const miniatura = imagen
+    ? (imagen.startsWith('/') && !imagen.startsWith(base) ? `${base}${imagen.slice(1)}` : imagen)
+    : undefined;
+  return { ...p, habilidades: p.habilidades ?? [], miniatura };
+}).sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999));
+const videosLargos = proyectos.filter((p) => p.formato === 'largo');
+const shorts = proyectos.filter((p) => p.formato === 'short');
 
 const proyectosMontaje = [...videosLargos, ...shorts];
 const total = proyectosMontaje.length;
@@ -78,11 +37,6 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
     <meta name="theme-color" content="#0b0b0d" />
     <meta name="description" content="Portafolio de Jesús Medina: edición de video, animación matemática, divulgación y narrativa audiovisual." />
     <title>Jesús Medina — Editor audiovisual</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href={`${import.meta.env.BASE_URL}favicon.svg`}
-    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -210,13 +164,13 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
                 ))}
               </div>
             </div>
-            <div class="timeline-bottom"><span>SEQUENCE: PORTFOLIO_2026</span><span>06 CLIPS · 02 FORMATOS</span></div>
+            <div class="timeline-bottom"><span>SEQUENCE: PORTFOLIO_2026</span><span>{`${String(total).padStart(2, "0")} CLIPS · 02 FORMATOS`}</span></div>
           </div>
         </div>
 
         <div class="gallery-intro reveal"><span>EXPLORA TODOS LOS PROYECTOS</span><span>↓</span></div>
 
-        <div class="gallery-heading reveal"><h3>LONG <em>FORM</em></h3><span>01 — 03 / VIDEO</span></div>
+        <div class="gallery-heading reveal"><h3>LONG <em>FORM</em></h3><span>{`01 — ${String(videosLargos.length).padStart(2, "0")} / VIDEO`}</span></div>
         <div class="carousel-controls" aria-label="Controles de videos largos">
           <span class="carousel-hint">DESLIZA PARA EXPLORAR <span aria-hidden="true">↔</span></span>
           <button type="button" class="carousel-arrow" data-carousel="long" data-direction="-1" aria-label="Proyecto anterior" disabled>←</button>
@@ -237,7 +191,7 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
                     decoding="async"
                   />
                   <span class="cover-shade"></span>
-                  <span class="video-counter">{String(index + 1).padStart(2, "0")} / 03</span>
+                  <span class="video-counter">{String(index + 1).padStart(2, "0")} / {String(videosLargos.length).padStart(2, "0")}</span>
                   <span class="video-play" aria-hidden="true">▶</span>
                   <span class="cover-label">REPRODUCIR ↗</span>
                 </button>
@@ -256,7 +210,7 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
         </div>
         </div>
 
-        <div class="gallery-heading shorts-heading reveal"><h3>SHORT <em>FORM</em></h3><span>04 — 06 / VERTICAL</span></div>
+        <div class="gallery-heading shorts-heading reveal"><h3>SHORT <em>FORM</em></h3><span>{`${String(videosLargos.length+1).padStart(2, "0")} — ${String(total).padStart(2, "0")} / VERTICAL`}</span></div>
         <div class="carousel-controls" aria-label="Controles de videos cortos">
           <span class="carousel-hint">DESLIZA PARA EXPLORAR <span aria-hidden="true">↔</span></span>
           <button type="button" class="carousel-arrow" data-carousel="short" data-direction="-1" aria-label="Proyecto anterior" disabled>←</button>
@@ -277,7 +231,7 @@ const suiteJSON = JSON.stringify(proyectosMontaje.map((p, i) => ({ ...p, vertica
                     decoding="async"
                   />
                   <span class="cover-shade"></span>
-                  <span class="video-counter">{String(index + 4).padStart(2, "0")} / 06</span>
+                  <span class="video-counter">{String(index + videosLargos.length + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
                   <span class="video-play" aria-hidden="true">▶</span>
                   <span class="cover-label">REPRODUCIR SHORT ↗</span>
                 </button>
